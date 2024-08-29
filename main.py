@@ -67,6 +67,7 @@ class EpitrochoidDerivation(Scene):
         # Use the extra space to derive the equation
         # Start with Rtheta = ralpha
         arc_length_equation = MathTex("R\\theta = r\\alpha").to_edge(UP)
+        arc_length_equation.shift(DOWN)
         arc_length_equation.scale(0.75)
         arc_length_equation.shift(RIGHT * 2.5)
         self.play(Write(arc_length_equation))
@@ -120,7 +121,7 @@ class EpitrochoidDerivation(Scene):
         r_label_new.set_opacity(0)
 
         # Derive the x(t) and y(t) equations
-        x_equation = MathTex("x(\\theta) = ").next_to(relation, DOWN, buff=2)
+        x_equation = MathTex("x(\\theta) = ").next_to(relation, DOWN, buff=1)
         x_equation.scale(0.75)
         y_equation = MathTex("y(\\theta) = ").next_to(x_equation, DOWN, buff=1)
         y_equation.scale(0.75)
@@ -183,7 +184,7 @@ class EpitrochoidDerivation(Scene):
         newangle = angle_text.copy()
         newangle2 = angle_text.copy()
         self.play(Write(x_add), Write(y_add), newrlabel.animate.move_to(x_add[0][1]), newrlabel2.animate.move_to(y_add[0][1]), newangle.animate.move_to(x_add[0][8]), newangle2.animate.move_to(y_add[0][8]))
-
+        self.wait(2)
         newrlabel.set_opacity(0)
         newrlabel2.set_opacity(0)
         newangle.set_opacity(0)
@@ -194,7 +195,7 @@ class EpitrochoidDerivation(Scene):
         y_add2.scale(0.75)
         
         self.play(Transform(x_add, x_add2), Transform(y_add, y_add2))
-        
+        self.wait(2)
         x_add3 = MathTex(r"-\, r\cos\left(\theta + \alpha\right)").next_to(Rrcos, RIGHT, buff=-0.29)
         y_add3 = MathTex(r"-\, r\sin\left(\theta + \alpha\right)").next_to(Rrsin, RIGHT, buff=-0.29)
         x_add3.scale(0.75)
@@ -202,7 +203,7 @@ class EpitrochoidDerivation(Scene):
         x_add.set_opacity(0)
         y_add.set_opacity(0)
         self.play(Transform(x_add2, x_add3), Transform(y_add2, y_add3))
-        
+        self.wait(2)
         # Identify and create a copy of the alpha symbol from the relation equation
         alpha_in_relation = relation[0][0].copy()  # The alpha symbol in the relation equation
         alpha_in_relation2 = relation[0][0].copy()
@@ -210,7 +211,6 @@ class EpitrochoidDerivation(Scene):
         self.play(alpha_in_relation.animate.move_to(x_add3[0][-2].get_center()), alpha_in_relation2.animate.move_to(y_add3[0][-2].get_center()))
         alpha_in_relation.set_opacity(0)
         alpha_in_relation2.set_opacity(0)
-        self.wait(1)
         x_add4 = MathTex(r"-\, r\cos\left(\theta + \frac{R\theta}{r}\right)").next_to(Rrcos, RIGHT, buff=-0.29)
         y_add4 = MathTex(r"-\, r\sin\left(\theta + \frac{R\theta}{r}\right)").next_to(Rrsin, RIGHT, buff=-0.29)
         x_add4.scale(0.75)
@@ -218,7 +218,7 @@ class EpitrochoidDerivation(Scene):
         x_add2.set_opacity(0)
         y_add2.set_opacity(0)
         self.play(Transform(x_add3, x_add4), Transform(y_add3, y_add4))
-        
+        self.wait(2)
         x_add5 = MathTex(r"-\, r\cos\left(\frac{R+r}{r}\cdot\theta)").next_to(Rrcos, RIGHT, buff=-0.29)
         y_add5 = MathTex(r"-\, r\sin\left(\frac{R+r}{r}\cdot\theta)").next_to(Rrsin, RIGHT, buff=-0.29)
         x_add5.scale(0.75)
@@ -251,10 +251,43 @@ class EpitrochoidDerivation(Scene):
         y_add6.scale(0.75)
         x_add4.set_opacity(0)
         y_add4.set_opacity(0)
-        self.play(Transform(x_add5,x_add6),Transform(y_add5,y_add6),newdtext.animate.move_to(x_add5[0][1]), newdtext2.animate.move_to(y_add5[0][1]))
+        self.play(Transform(x_add5,x_add6),Transform(y_add5,y_add6))
+        self.play(FadeOut(d_text),newdtext.animate.move_to(x_add5[0][1]), newdtext2.animate.move_to(y_add5[0][1]))
         newdtext.set_opacity(0)
         newdtext2.set_opacity(0)
         finalsigmagroup = VGroup(x_equation, y_equation, x_add5, y_add5, Rrcos, Rrsin)
         box = SurroundingRectangle(finalsigmagroup, color=WHITE, buff=0.2)
         self.play(Create(box))
+        self.wait(2)
+        self.play(FadeOut(finalsigmagroup), FadeOut(box), FadeOut(relation), FadeOut(arc_length_equation), FadeOut(R_label), FadeOut(theta_label), FadeOut(theta_arc), FadeOut(radius_R))
+        self.play(rolling_circle.animate.move_to([(R+r)*0.75,0,0]), fixed_circle.animate.move_to([0,0,0]))
+        d=1/0.75
+        
+        theta_value = ValueTracker(0)
+        theta_text = always_redraw(lambda: MathTex(rf"\theta = {theta_value.get_value():.2f}").to_corner(UL))
+        self.add(theta_text)
+        parametric_curve = ParametricFunction(
+            lambda t: np.array([
+                0.75*((R+r) * np.cos(t) - d*np.cos((R+r)*t/r)),  # x = 2 * cos(3t)
+                0.75*((R+r) * np.sin(t) - d*np.sin((R+r)*t/r)),  # y = 2 * sin(2t)
+                0
+            ]),
+            t_range = np.array([0, 2 * PI]),
+            color = GREEN
+        )
+        finalline = Line(start=rolling_circle.get_center(), end=rolling_circle.get_center() + np.array([-1,0,0]), color=WHITE)
+        new_rolling_group = VGroup(rolling_circle)
+        def update_rolling_group2(group, alpha):
+            theta = alpha * 1 * 2 * np.pi
+            theta_value.set_value(theta)
+            center_x = (R + r)*0.75 * np.cos(theta)
+            center_y = (R + r) *0.75* np.sin(theta)
+            group.move_to([center_x, center_y, 0])
+            # Rotate the rolling circle relative to its own center
+            group[0].rotate(-theta)
+        self.play(UpdateFromAlphaFunc(
+            new_rolling_group,
+            update_rolling_group2
+        ), Create(parametric_curve), run_time=6, rate_func=linear)
+        self.play(FadeOut(fixed_circle), FadeOut(rolling_circle), FadeOut(theta_text))
         self.wait(3)
